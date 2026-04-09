@@ -19,7 +19,7 @@ setup(
     python_requires=">=3.6",
     entry_points={
         "console_scripts": [
-            "bugscan=bugscan.main:main",
+            "as-scan=bugscan.main:main",
         ],
     },
 )
