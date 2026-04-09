@@ -6,9 +6,9 @@
 
 ## 🚀 Installation (Termux)
 
-``bash 
+```bash 
 pip install git+https://github.com/skanish0123/BUGSCAN.git
 
 
-``bash
+```bash
 pip install bugscan-as
