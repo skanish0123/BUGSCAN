@@ -9,4 +9,4 @@
 ```bash 
 pip install git+https://github.com/skanish0123/BUGSCAN.git
 
-pip install bugscan-as
+pip install bugscan-tool
