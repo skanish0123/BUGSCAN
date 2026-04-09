@@ -5,6 +5,8 @@
 **License:** MIT
 
 ## 🚀 Installation (Termux)
+``bash pip install git+https://github.com/skanish0123/BUGSCAN.git
+
 
 ```bash
 pip install bugscan-as
