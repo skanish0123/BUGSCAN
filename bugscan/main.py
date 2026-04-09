@@ -1,11 +1,12 @@
-# BUGSCAN - Advanced Security Tool
+#!/usr/bin/env python3
+# BUGSCAN - Advanced Security Toolkit with Subfinder
 # Developer: ANISH
-# pip install bugscan-tool
 
 import socket
 import os
 import sys
 import platform
+import subprocess
 
 R = '\033[91m'; G = '\033[92m'; Y = '\033[93m'; C = '\033[96m'
 W = '\033[97m'; RESET = '\033[0m'; BOLD = '\033[1m'
@@ -25,7 +26,8 @@ def banner():
 {R}╚══════════════════════════════════════════════════════╝{RESET}
 {BOLD}{Y}╔══════════════════════════════════════════════════════╗
 {Y}║{G}         🔥 DEVELOPER: {BOLD}{W}ANISH{RESET}{BOLD}{G} 🔥                    {Y}║
-{Y}║{C}       🛡️  BUGSCAN SECURITY TOOLKIT v2.0  🛡️{Y}           ║
+{Y}║{C}       🛡️  BUGSCAN SECURITY TOOLKIT v3.0  🛡️{Y}           ║
+{Y}║{C}       🔧 SUBFINDER INTEGRATED 🔧{Y}                       ║
 {Y}╚══════════════════════════════════════════════════════╝{RESET}
 """)
 
@@ -35,7 +37,7 @@ def menu():
 │                 {Y}📌 MAIN MENU {C}                   │
 ├──────────────────────────────────────────────────┤
 │  {G}1.{RESET} {W}HOST SCANNER{RESET}                           │
-│  {G}2.{RESET} {W}SUBFINDER{RESET}                             │
+│  {G}2.{RESET} {W}SUBFINDER {C}[SUBSCAN]{RESET}                    │
 │  {G}3.{RESET} {W}IP LOOKUP{RESET}                             │
 │  {G}4.{RESET} {W}FILE TOOLKIT{RESET}                          │
 │  {G}5.{RESET} {W}PORT SCANNER{RESET}                          │
@@ -47,6 +49,80 @@ def menu():
 └──────────────────────────────────────────────────┘
 """)
 
+def check_subfinder():
+    """Check if subfinder is installed"""
+    result = subprocess.run(["which", "subfinder"], capture_output=True, text=True)
+    return result.returncode == 0
+
+def install_subfinder():
+    """Install subfinder automatically"""
+    print(f"{Y}[!] Subfinder not found! Installing...{RESET}")
+    
+    # Check if Go is installed
+    go_check = subprocess.run(["which", "go"], capture_output=True, text=True)
+    if go_check.returncode != 0:
+        print(f"{Y}[!] Installing Go first...{RESET}")
+        os.system("pkg install golang -y")
+    
+    # Install subfinder
+    print(f"{C}[*] Installing Subfinder via go...{RESET}")
+    os.system("go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest")
+    
+    # Add to path
+    os.system("echo 'export PATH=$PATH:$HOME/go/bin' >> ~/.bashrc")
+    os.system("export PATH=$PATH:$HOME/go/bin")
+    
+    print(f"{G}[✓] Subfinder installed successfully!{RESET}")
+    print(f"{Y}[!] Please restart Termux or run: source ~/.bashrc{RESET}")
+
+def subfinder_tool():
+    """Run subfinder on target domain"""
+    domain = input(f"{Y}[?] Enter Target Domain {W}» {RESET}")
+    
+    if not domain:
+        print(f"{R}[✗] Domain required!{RESET}")
+        return
+    
+    # Check if subfinder is installed
+    if not check_subfinder():
+        print(f"{Y}[!] Subfinder not detected{RESET}")
+        install = input(f"{Y}[?] Install Subfinder now? (y/n) {W}» {RESET}")
+        if install.lower() == 'y':
+            install_subfinder()
+            print(f"{Y}[!] Please restart the tool after installation{RESET}")
+            return
+        else:
+            print(f"{R}[✗] Subfinder required for this feature{RESET}")
+            return
+    
+    print(f"{C}[*] Scanning subdomains for {domain}...{RESET}")
+    print(f"{Y}[+] This may take a few moments{RESET}")
+    
+    # Run subfinder
+    output_file = f"subdomains_{domain}.txt"
+    cmd = f"subfinder -d {domain} -silent -o {output_file}"
+    
+    try:
+        subprocess.run(cmd, shell=True, check=True)
+        
+        # Count and display results
+        with open(output_file, 'r') as f:
+            subdomains = f.readlines()
+        
+        if subdomains:
+            print(f"{G}[✓] Found {len(subdomains)} subdomains!{RESET}")
+            print(f"{C}┌─── SUBDOMAINS ───┐{RESET}")
+            for sub in subdomains[:20]:  # Show first 20
+                print(f"{G}[+] {sub.strip()}{RESET}")
+            if len(subdomains) > 20:
+                print(f"{Y}[!] ... and {len(subdomains)-20} more{RESET}")
+            print(f"{G}[✓] Saved to: {output_file}{RESET}")
+        else:
+            print(f"{R}[✗] No subdomains found{RESET}")
+            
+    except subprocess.CalledProcessError:
+        print(f"{R}[✗] Subfinder scan failed!{RESET}")
+
 def host_scanner():
     host = input(f"{Y}[?] Enter Host/IP {W}» {RESET}")
     response = os.system(f"ping -c 1 {host} > /dev/null 2>&1")
@@ -54,11 +130,6 @@ def host_scanner():
         print(f"{G}[✓] Host {host} is UP{RESET}")
     else:
         print(f"{R}[✗] Host {host} is DOWN{RESET}")
-
-def subfinder():
-    domain = input(f"{Y}[?] Enter Domain {W}» {RESET}")
-    print(f"{C}[*] Finding subdomains for {domain}{RESET}")
-    print(f"{Y}[!] Install: go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest{RESET}")
 
 def ip_lookup():
     host = input(f"{Y}[?] Enter Hostname {W}» {RESET}")
@@ -123,23 +194,20 @@ def host_info():
         print(f"{R}[✗] Error fetching info{RESET}")
 
 def update_tool():
-    print(f"{G}[✓] BUGSCAN v2.0 is up to date{RESET}")
+    print(f"{G}[✓] BUGSCAN v3.0 (Subfinder Integrated){RESET}")
+    print(f"{C}[*] Checking for updates...{RESET}")
+    os.system("cd BUGSCAN && git pull 2>/dev/null || echo 'Not a git repo'")
 
 def show_help():
     print(f"""{C}
 ┌────────────────────────────────────────────────┐
 │ {BOLD}HELP SECTION{RESET}{C}                              │
 ├────────────────────────────────────────────────┤
-│ 1. Host Scanner - Ping test                    │
-│ 2. Subfinder - Find subdomains (external)      │
-│ 3. IP Lookup - Resolve domain to IP            │
-│ 4. File Toolkit - Read/Write/Delete files      │
-│ 5. Port Scanner - TCP port scan                │
-│ 6. DNS Record - Get DNS information            │
-│ 7. Host Info - System & network info           │
-│ 8. Help - Show this menu                       │
-│ 9. Update - Check for updates                  │
-│ 0. Exit - Close BUGSCAN                        │
+│ {G}2. SUBFINDER{RESET} - Find subdomains (Auto-install) │
+│    * Automatically installs Go & Subfinder     │
+│    * Saves results to subdomains_*.txt         │
+│                                                 │
+│ Other tools work as described                  │
 └────────────────────────────────────────────────┘
 {RESET}""")
 
@@ -153,7 +221,7 @@ def main():
         if choice == "1":
             host_scanner()
         elif choice == "2":
-            subfinder()
+            subfinder_tool()
         elif choice == "3":
             ip_lookup()
         elif choice == "4":
